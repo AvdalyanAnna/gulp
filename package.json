@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "gulp --env development",
+    "build": "gulp --env production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,18 +13,25 @@
   "description": "",
   "devDependencies": {
     "browser-sync": "^3.0.4",
+    "chalk": "^4.0.1",
     "del": "^5.1.0",
+    "fancy-log": "^1.0.0",
     "fs": "^0.0.1-security",
     "gulp": "^4.0.2",
     "gulp-concat": "^2.6.1",
     "gulp-htmlmin": "^5.0.1",
+    "gulp-if": "^3.0.0",
     "gulp-imagemin": "^7.1.0",
     "gulp-notify": "^5.0.0",
+    "gulp-purgecss": "^7.0.2",
     "gulp-sass": "^6.0.1",
+    "gulp-size": "^4.0.0",
     "gulp-sourcemaps": "^3.0.0",
+    "gulp-strip-debug": "^4.0.0",
     "gulp-ttf2woff2": "^4.0.0",
     "gulp-uglify": "^3.0.2",
     "gulp-webp": "^4.0.0",
+    "minimist": "^1.2.8",
     "sass": "^1.87.0"
   }
 }

@@ -12,6 +12,20 @@ const ttf2woff2 = require('gulp-ttf2woff2');
 const fs = require('fs').promises;
 const path = require('path');
 const notify = require('gulp-notify');
+const size = require('gulp-size');
+const log = require('fancy-log');
+const chalk = require('chalk');
+const gulpIf = require('gulp-if');
+const minimist = require('minimist');
+const stripDebug = require('gulp-strip-debug');
+const purgecss = require('gulp-purgecss');
+
+const options = minimist(process.argv.slice(2), {
+    string: 'env',
+    default: { env: 'development' }
+});
+
+const isProduction = options.env === 'production';
 
 // Очищаем папку dist
 function clean() {
@@ -21,12 +35,16 @@ function clean() {
 // Компиляция SCSS
 function styles() {
     return gulp.src('src/scss/**/*.scss')
-        .pipe(sourcemaps.init())
+    .pipe(gulpIf(!isProduction, sourcemaps.init()))
         .pipe(sass().on('error', notify.onError({
             title:'SASS Error',
             message:'<%= error.message %>'
         })))
-        .pipe(sourcemaps.write('.'))
+        .pipe(gulpIf(isProduction, purgecss({
+            content: ['src/**/*.html', 'src/js/**/*.js'],
+            safelist: { standard: [/^swiper/, /^slick/] } 
+        })))
+        .pipe(gulpIf(!isProduction, sourcemaps.write('.')))
         .pipe(gulp.dest('dist/css'))
         .pipe(browserSync.stream())
 }
@@ -98,13 +116,14 @@ function copyFonts() {
 // Обработка JavaScript
 function scripts() {
     return gulp.src('src/js/**/*.js')
-        .pipe(sourcemaps.init())
+    .pipe(gulpIf(!isProduction, sourcemaps.init()))
         .pipe(concat('main.min.js')) // объединить в один файл
+        .pipe(gulpIf(isProduction, stripDebug()))
         .pipe(uglify().on('error',notify.onError({
             title:'JavaScript  Error',
             message:'<%= error.message %>'
         })))              // минифицировать
-        .pipe(sourcemaps.write('.'))
+        .pipe(gulpIf(!isProduction, sourcemaps.init()))
         .pipe(gulp.dest('dist/js'))
         .pipe(browserSync.stream());
 }
@@ -154,6 +173,20 @@ function serve() {
     gulp.watch('src/**/*.html', html);
 }
 
+function buildSummary() {
+    return gulp.src('dist/**/*')
+      .pipe(size({
+        title: '📦 Сборка завершена:',
+        showFiles: true,
+        showTotal: true
+      }));
+  }
+
+  function successMessage(done) {
+    log(chalk.green.bold('🎉 Сборка прошла успешно! Всё готово в папке dist.'));
+    done();
+  }
+
 exports.clean = clean;
 exports.styles = styles;
 exports.fonts = fonts;
@@ -164,6 +197,8 @@ exports.images = images;
 exports.webpImages = webpImages;
 exports.html = html;
 exports.serve = serve;
+exports.buildSummary = buildSummary;
+exports.successMessage = successMessage;
 
 
 exports.buildFonts  = gulp.series(copyFonts, fonts, fontsStyle);
@@ -172,5 +207,7 @@ exports.default = gulp.series(
     clean,
     gulp.parallel(styles, fonts, copyFonts,scripts, images, webpImages, html),
     fontsStyle,
+    buildSummary,
+    successMessage,
     serve
 );
